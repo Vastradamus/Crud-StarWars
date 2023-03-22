@@ -12,6 +12,10 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
     const quotesCollection = db.collection('quotes')
     app.set('view engine', 'ejs')
     app.use(bodyParser.urlencoded({extended: true})) //trebalo bi da moze i bez ovoga
+    app.use(express.static('public'))
+    app.use(bodyParser.json())
+
+
     app.get('/', (req,res) => {
         quotesCollection.find().toArray()
             .then(results => {
@@ -28,6 +32,37 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true })
         res.redirect('/')
        })
        .catch(error => console.error(error))
+    })
+    app.put('/quotes', (req,res) => {
+        quotesCollection.findOneAndUpdate(
+            {name:'Yoda'},
+            {
+                $set: {
+                    name: req.body.name,
+                    quote: req.body.quote
+                }
+            },
+            {
+                upsert:true
+            }
+        )
+        .then(result => {
+            console.log(result)
+            res.json('Sucess')
+        })
+        .catch(error => console.log(error))
+    })
+    app.delete('/quotes', (req, res) => {
+        quotesCollection.deleteOne(
+            {name: req.body.name}
+        )
+        .then(result => {
+            if (result.deletedCount === 0) {
+                return res.json('No quote to delete')
+              }
+            res.json("Deleted Darth Vader's quote")
+        })
+        .catch(error => console.error(error))
     })
     app.listen(3000, function(){
         console.log('listening on 3000')
